@@ -10,12 +10,41 @@ levels =
 
 middleware = {}
 
-middleware.formatter = (formatstring=null) ->
-  defaultFormat = "%timestamp %message "
-  formatstring ||= defaultFormat
+defaultFormat = "%(green)timestamp% [%(default)level%] %message%"
+defaultFormat = "[%(default)level%] %(default)message%"
+
+middleware.formatter = (format=defaultFormat, formatFns={}) ->
+  defaultFormatFns =
+    timestamp: (date) ->
+      "#{date.getFullYear()}#{date.getMonth()+1}#{date.getDate()} "+
+      "#{date.getHours()}:#{date.getMinutes()}:#{date.getSeconds()}"
 
   (entry) ->
-    entry.message = formatstring + entry.message
+    entry.message = format.replace /%(\(([\w,]+)\))?(\w+)%/g,
+      (str, p1, p2, p3, offset, s) ->
+        fn = formatFns[p3] || defaultFormatFns[p3]
+        result = if fn then fn(entry[p3]) else entry[p3]
+        if p2 and entry.color
+          esc(entry.colors[if p2=='default' then entry.color else p2])+result + esc(0)
+        else
+          result
+
+esc = (str) ->
+  "\x1B["+str+'m'
+
+defaultColors = {
+  black: 30, red: 31, green: 32, yellow: 33, blue: 34,
+  magenta: 35, cyan: 36, white: 37,
+  bold: 1, underline: 4, reversed: 7
+}
+
+colorMap = {info: 'white', debug: 'cyan', warn: 'red', error: 'red'}
+
+middleware.color = (map = colorMap, colors = defaultColors) ->
+  (entry) ->
+    entry.color = map[entry.level] || 'white'
+    entry.colors = colors
+    entry.colorMap = map
 
 middleware.inspector = (type='inspect') ->
   types =
@@ -36,7 +65,7 @@ outputters =
     (entry) ->
       util.debug entry.message
 
-dfltM = [ middleware.formatter(), middleware.inspector() ]
+dfltM = [ middleware.color(), middleware.formatter(), middleware.inspector() ]
 dfltO = [ outputters.stdout() ]
 
 class Logger
@@ -73,7 +102,7 @@ class Logger
       @_log(level, message, params...)
 
   _log: (level, message, params...) ->
-    entry = {timestamp: new Date(), message, logger: @, params}
+    entry = {timestamp: new Date(), message, logger: @, params, level}
     @_middleware.forEach (middleware) ->
       middleware(entry)
     @_outputters.forEach (outputter) ->
@@ -111,9 +140,6 @@ class Logger
     logger.set(options)
 
   create: (options) ->
-    logger = new Logger(options)
-    logger._middleware = @_middleware
-    logger._outputters = @_outputters
-    logger
+    new Logger(options)
 
 module.exports = defaultLogger = new Logger

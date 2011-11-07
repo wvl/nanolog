@@ -31,3 +31,9 @@ feat3.info("module will behave as normal, If not overriden")
 feat3.debug("so this won't be shown")
 
 llog.info("this should not be blank")
+
+var newlog = llog.create()
+newlog.use(llog.m.formatter("%timestamp% [%level%] %message%", 
+                            {timestamp: function(date) { return date.getFullYear(); }}))
+newlog.info("This should have a timestamp, formatted as full year")
+

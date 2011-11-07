@@ -5,7 +5,7 @@ var path = require('path');
 var exec = require('child_process').exec;
 var l = function(dir) { return path.join(__dirname, dir); }
 
-exec('node '+l('./run.js')+' >stdout 2>stderr',
+exec('node '+l('./run.js')+' >'+l('stdout')+' 2>'+l('stderr'),
   function(err, stdout, stderr) {
     matches('stdout');
     matches('stderr');

@@ -1,5 +1,6 @@
-%timestamp %message You can use it straight out of the box
-%timestamp %message I Shortcut
-%timestamp %message This should log
-%timestamp %message You can display objects as well
+[[37minfo[0m] [37mYou can use it straight out of the box[0m
+[[37minfo[0m] [37mI Shortcut[0m
+[[31mwarn[0m] [31mThis should log[0m
+[[37minfo[0m] [37mYou can display objects as well[0m
 { msg: 'Hello World' }
+2011 [info] This should have a timestamp, formatted as full year
