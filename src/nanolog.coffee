@@ -86,7 +86,7 @@ class Logger
       Object.keys(@_opts.levels || {}).forEach (level) =>
         delete @[level]
       Object.keys(options.levels).forEach (level) =>
-        @[level] = (msg, params...) ->
+        @[level] = (msg, params...) =>
           @log(level, msg, params...)
         first = level[0].toUpperCase()
         @[first] = @[level] unless @[first]
