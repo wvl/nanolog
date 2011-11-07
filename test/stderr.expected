@@ -1,0 +1,5 @@
+DEBUG: %timestamp %message This should now be sent to stderr and only stderr
+DEBUG: %timestamp %message Dup should now send stuff to stderr
+DEBUG: %timestamp %message feature debug: not blank
+DEBUG: %timestamp %message module will behave as normal, If not overriden
+DEBUG: %timestamp %message this should not be blank

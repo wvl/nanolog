@@ -1,0 +1,5 @@
+%timestamp %message You can use it straight out of the box
+%timestamp %message I Shortcut
+%timestamp %message This should log
+%timestamp %message You can display objects as well
+{ msg: 'Hello World' }
