@@ -1,6 +1,20 @@
 [[37minfo[0m] [37mYou can use it straight out of the box[0m
 [[37minfo[0m] [37mI Shortcut[0m
-[[31mwarn[0m] [31mThis should log[0m
 [[37minfo[0m] [37mYou can display objects as well[0m
 { msg: 'Hello World' }
-2011 [info] This should have a timestamp, formatted as full year
+[[33mwarn[0m] [33muh oh[0m
+[[37mbad[0m] [37mUh Oh[0m
+[[37mgood[0m] [37mbetter[0m
+[[31merror[0m] [31mreset[0m
+[[36mdebug[0m] [36mNow debug level[0m
+nanolog: Displays with custom format
+Sent to both stdout and stderr
+HELLO, WORLD
+[[33mwarn[0m] [33mThis should log[0m
+LOG2 SHOULD LOG DEBUG
+[[37minfo[0m] [37mBack to normal log[0m
+[[31merror[0m] [31mfeature error: not blank[0m
+[[36mdebug[0m] [36mfeature debug: should log[0m
+[[37minfo[0m] [37mmodule will behave as normal, If not overriden[0m
+[[37minfo[0m] [37mShould log to stdout[0m
+[[33mwarn[0m] [33mShould log to stdout and stderr[0m

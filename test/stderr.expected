@@ -1,5 +1,2 @@
-DEBUG: [[37minfo[0m] [37mThis should now be sent to stderr and only stderr[0m
-DEBUG: [[31mwarn[0m] [31mDup should now send stuff to stderr[0m
-DEBUG: [[36mdebug[0m] [36mfeature debug: not blank[0m
-DEBUG: [[37minfo[0m] [37mmodule will behave as normal, If not overriden[0m
-DEBUG: [[37minfo[0m] [37mthis should not be blank[0m
+DEBUG: stderr: Sent to both stdout and stderr
+DEBUG: [[33mwarn[0m] [33mShould log to stdout and stderr[0m

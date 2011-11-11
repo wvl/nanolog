@@ -1,50 +1,31 @@
 util = require 'util'
 
-levels =
-  panic: 0
-  error: 1
-  warn: 2
-  info: 3
-  debug: 4
-  trace: 5
+defaults = {}
+defaults.levels = {
+  panic: 0, error: 1, warn: 2, info: 3, debug: 4, trace: 5
+}
+defaults.level = 'info'
 
-middleware = {}
+defaults.fileFormat = "%timestamp% [%level%] %message%"
+defaults.consoleFormat = "[%(default)level%] %(default)message%%:n:inspect%"
 
-defaultFormat = "%(green)timestamp% [%(default)level%] %message%"
-defaultFormat = "[%(default)level%] %(default)message%"
-
-middleware.formatter = (format=defaultFormat, formatFns={}) ->
-  defaultFormatFns =
-    timestamp: (date) ->
-      "#{date.getFullYear()}#{date.getMonth()+1}#{date.getDate()} "+
-      "#{date.getHours()}:#{date.getMinutes()}:#{date.getSeconds()}"
-
-  (entry) ->
-    entry.message = format.replace /%(\(([\w,]+)\))?(\w+)%/g,
-      (str, p1, p2, p3, offset, s) ->
-        fn = formatFns[p3] || defaultFormatFns[p3]
-        result = if fn then fn(entry[p3]) else entry[p3]
-        if p2 and entry.color
-          esc(entry.colors[if p2=='default' then entry.color else p2])+result + esc(0)
-        else
-          result
-
-esc = (str) ->
-  "\x1B["+str+'m'
-
-defaultColors = {
+defaults.colors = {
   black: 30, red: 31, green: 32, yellow: 33, blue: 34,
   magenta: 35, cyan: 36, white: 37,
   bold: 1, underline: 4, reversed: 7
 }
 
-colorMap = {info: 'white', debug: 'cyan', warn: 'red', error: 'red'}
+defaults.colorMap = {
+  info: 'white', debug: 'cyan', warn: 'yellow', error: 'red'
+}
 
-middleware.color = (map = colorMap, colors = defaultColors) ->
-  (entry) ->
-    entry.color = map[entry.level] || 'white'
-    entry.colors = colors
-    entry.colorMap = map
+middleware = m = {}
+
+middleware.color = (map=defaults.colorMap, colors=defaults.colors, defaultColor='white') ->
+  fn = (entry) ->
+    map[entry.level] || defaultColor
+  fn.colors = colors
+  fn
 
 middleware.inspector = (type='inspect') ->
   types =
@@ -52,42 +33,95 @@ middleware.inspector = (type='inspect') ->
     json: (param) -> JSON.stringify(param, null, '  ')
 
   (entry) ->
-    entry.params.forEach (param) ->
-      entry.message += "\n"+types[type](param)
+    entry.get('params').map((param) -> types[type](param)).join('\n')
 
+middleware.datetime = ->
+  (entry) ->
+    d = new Date()
+    "#{d.getFullYear()}#{d.getMonth()+1}#{d.getDate()} "+
+    "#{d.getHours()}:#{d.getMinutes()}:#{d.getSeconds()}"
 
 outputters =
   stdout: (opts={}) ->
+    opts.format ||= defaults.consoleFormat
+
     (entry) ->
-      console.log entry.message
+      if !opts.level || entry.logger.shouldLog(entry.level, opts.level)
+        console.log entry.format(opts.format)
 
   stderr: (opts={}) ->
-    (entry) ->
-      util.debug entry.message
+    opts.format ||= defaults.consoleFormat
 
-dfltM = [ middleware.color(), middleware.formatter(), middleware.inspector() ]
-dfltO = [ outputters.stdout() ]
+    (entry) ->
+      if !opts.level || entry.logger.shouldLog(entry.level, opts.level)
+        util.debug entry.format(opts.format)
+
+defaults.attrs =
+  timestamp: -> new Date().getTime()
+  datetime: -> m.datetime()
+  inspect: m.inspector()
+  color: m.color()
+
+defaults.outputs = [outputters.stdout()]
+
+esc = (str) ->
+  "\x1B["+str+'m'
+
+class Entry
+  constructor: (@logger, @level, @message, @params) ->
+
+  get: (param) ->
+    if @logger.attrs[param] then @logger.attrs[param](@) else @[param]
+
+  # The format string is a simple substitution format.
+  # Attributes to replace are wrapped with '%'.
+  #   %message%
+  #
+  # Optional colors are specified by prefacing with parentheses 
+  # containing either the color name, or 'default':
+  #   %(red)timestamp% %(default)message%
+  #
+  # You can prefix the attribute with space using 'n','s', or 't'.
+  #   n -> newline
+  #   s -> space
+  #   t -> tab
+  # This is useful for optional attributes:
+  #   %:n:inspect%
+  #
+  format: (formatstring) ->
+    # %(color):nss:param%
+    formatstring.replace /%(\(([\w,]+)\))?(:([snt]+):)?(\w+)%/g,
+      (str, p1, color, p3, space, param, offset, s) =>
+        r = @get(param)
+        if color and @get('color')
+          colors = @logger.attrs['color'].colors
+          r = esc(colors[if color=='default' then @get('color') else color])+r+esc(0)
+        if space and r
+          r = space.replace(/n/g, '\n').replace(/s/g, ' ').replace(/t/g, '\t')+r
+        r
 
 class Logger
-  constructor: (options={}, @_middleware=dfltM, @_outputters=dfltO) ->
-    for key,val of {levels, level: 'info', modules: {}}
+  constructor: (options={}, @attrs=defaults.attrs, @_outputs=defaults.outputs) ->
+    for key,val of {levels: defaults.levels, level: defaults.level, modules: {}}
       options[key] = val unless options[key]
     @_opts={}
     @set(options)
 
+    @defaults = defaults
+
     @middleware = @m = middleware
     @outputters = @out = outputters
 
-    @_origMiddleware = true
-    @_origOutputters = true
-
   set: (options) ->
     if options.levels
+      # Delete previous log functions
       Object.keys(@_opts.levels || {}).forEach (level) =>
         delete @[level]
+        delete @[level[0].toUpperCase()]
+
       Object.keys(options.levels).forEach (level) =>
         @[level] = (msg, params...) =>
-          @log(level, msg, params...)
+          @_log(level, msg, params...) if @shouldLog(level, @_opts.level)
         first = level[0].toUpperCase()
         @[first] = @[level] unless @[first]
       @_opts.levels = options.levels
@@ -96,49 +130,41 @@ class Logger
     @_opts.level = options.level if options.level
     @
 
-  # The basic log function
+  shouldLog: (thisLevel, loggableLevel) ->
+    @_opts.levels[thisLevel] <= @_opts.levels[loggableLevel]
+
+  # The basic log function with level check
   log: (level, message, params...) ->
-    if @_opts.levels[level] <= @_opts.levels[@_opts.level]
-      @_log(level, message, params...)
+    @_log(level, message, params...) if @shouldLog(level, @_opts.level)
 
   _log: (level, message, params...) ->
-    entry = {timestamp: new Date(), message, logger: @, params, level}
-    @_middleware.forEach (middleware) ->
-      middleware(entry)
-    @_outputters.forEach (outputter) ->
-      outputter(entry)
+    entry = new Entry(@, level, message, params)
+    @_outputs.forEach (out) -> out(entry)
 
-  # Append middleware to the queue. If `use` has not been called
-  # yet, the list will be reset, in order to override the default.
-  use: (middlewares...) ->
-    [@_origMiddleware,@_middleware] = [false,[]] if @_origMiddleware
-    middlewares.forEach (ware) =>
-      @_middleware.push(ware)
-    @
-
-  # Append outputters to the queue. If to has not been called yet,
-  # the list will be reset, in order to override the default.
+  # Set a new array of output functions.
   to: (outputters...) ->
-    [@_origOutputters,@_outputters] = [false,[]] if @_origOutputters
-    outputters.forEach (outputter) =>
-      @_outputters.push(outputter)
+    @_outputs = outputters
     @
 
+  # Create a new logger object that proxies to this class with 
+  # additional level check that is specific to the module name.
   module: (module) ->
     moduleLogger = {}
     Object.keys(@_opts.levels).forEach (level) =>
       moduleLogger[level] = (msg, params...) =>
-        if @_opts.levels[level] <= @_opts.levels[@_opts.modules[module] || @_opts.level]
+        if @shouldLog(level, @_opts.modules[module] || @_opts.level)
           @_log(level, msg, params...) 
       first = level[0].toUpperCase()
       moduleLogger[first] = moduleLogger[level] unless moduleLogger[first]
     moduleLogger
 
-  # Return a logger that is a clone of this one.
-  dup: (options) ->
-    logger = new Logger(@_opts, @_middleware, @_outputters)
-    logger.set(options)
+  # Create a new logger that is a clone of this one.
+  dup: (options={}) ->
+    logger = new Logger(@_opts, @_attrs, @_outputs)
+    # logger.set(options)
+    logger
 
+  # Create a new logger instance, using default
   create: (options) ->
     new Logger(options)
 
