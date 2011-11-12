@@ -13,8 +13,9 @@ HELLO, WORLD
 [[33mwarn[0m] [33mThis should log[0m
 LOG2 SHOULD LOG DEBUG
 [[37minfo[0m] [37mBack to normal log[0m
-[[31merror[0m] [31mfeature error: not blank[0m
-[[36mdebug[0m] [36mfeature debug: should log[0m
-[[37minfo[0m] [37mmodule will behave as normal, If not overriden[0m
+feature: feature error: not blank
+feature: feature debug: should log
+feature3: module will behave as normal, If not overriden
+: base logger again
 [[37minfo[0m] [37mShould log to stdout[0m
 [[33mwarn[0m] [33mShould log to stdout and stderr[0m

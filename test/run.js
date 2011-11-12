@@ -43,15 +43,21 @@ log.to(log.out.stdout())
 log.set({level: 'info'})
 log.info("Back to normal log")
 
+log.to(log.out.stdout({format: "%module%: %message%"}))
 var feat = log.module("feature")
 feat.debug("feature debug: blank")
 feat.error("feature error: not blank")
-log.set({modules: {feature: 'debug'}})
+log.set({modules: {feature: 'debug', base: 'error'}})
 feat.D("feature debug: should log")
 
 var feat2 = log.module("feature3")
 feat2.info("module will behave as normal, If not overriden")
 feat2.debug("so this won't be shown")
+
+var namespaced = log.module("base::feature5")
+namespaced.info("using the module namespace should not display")
+
+log.info("base logger again")
 
 // Override log levels at the output level
 log.to(log.out.stdout({level: 'debug'}), log.out.stderr({level: 'warn'}))

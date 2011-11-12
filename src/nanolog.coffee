@@ -68,7 +68,7 @@ esc = (str) ->
   "\x1B["+str+'m'
 
 class Entry
-  constructor: (@logger, @level, @message, @params) ->
+  constructor: (options) -> @[k] = options[k] for k of options
 
   get: (param) ->
     if @logger.attrs[param] then @logger.attrs[param](@) else @[param]
@@ -120,8 +120,9 @@ class Logger
         delete @[level[0].toUpperCase()]
 
       Object.keys(options.levels).forEach (level) =>
-        @[level] = (msg, params...) =>
-          @_log(level, msg, params...) if @shouldLog(level, @_opts.level)
+        @[level] = (message, params...) =>
+          if @shouldLog(level, @_opts.level)
+            @_log({logger: @, level, message, params, module: ''})
         first = level[0].toUpperCase()
         @[first] = @[level] unless @[first]
       @_opts.levels = options.levels
@@ -135,10 +136,11 @@ class Logger
 
   # The basic log function with level check
   log: (level, message, params...) ->
-    @_log(level, message, params...) if @shouldLog(level, @_opts.level)
+    if @shouldLog(level, @_opts.level)
+      @_log({logger: @, level, message, params, module: ''})
 
-  _log: (level, message, params...) ->
-    entry = new Entry(@, level, message, params)
+  _log: (options) ->
+    entry = new Entry(options)
     @_outputs.forEach (out) -> out(entry)
 
   # Set a new array of output functions.
@@ -151,9 +153,12 @@ class Logger
   module: (module) ->
     moduleLogger = {}
     Object.keys(@_opts.levels).forEach (level) =>
-      moduleLogger[level] = (msg, params...) =>
-        if @shouldLog(level, @_opts.modules[module] || @_opts.level)
-          @_log(level, msg, params...) 
+      moduleLogger[level] = (message, params...) =>
+        modulelevel = @_opts.modules[module]
+        if !modulelevel && module.split('::').length > 1
+          modulelevel = @_opts.modules[module.split('::')[0]]
+        if @shouldLog(level, modulelevel || @_opts.level)
+          @_log({logger: @, level, message, params, module})
       first = level[0].toUpperCase()
       moduleLogger[first] = moduleLogger[level] unless moduleLogger[first]
     moduleLogger

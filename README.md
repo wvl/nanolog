@@ -152,14 +152,5 @@ code).
 TODO
 ----
 
-* Give modules namespaces, so you can control output level more easily:
-
-```js
-var I = log.module("mymod::feature1").info;
-// then, silence all modules from 'mymod':
-log.set({modules: {'mymod': 'error'}});
-```
-
-* Add module name to entry hash.
 * Add File outputter
 * Publish to npm.
