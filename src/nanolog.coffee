@@ -54,7 +54,7 @@ outputters =
 
     (entry) ->
       if !opts.level || entry.logger.shouldLog(entry.level, opts.level)
-        util.debug entry.format(opts.format)
+        console.warn entry.format(opts.format)
 
 defaults.attrs =
   timestamp: -> new Date().getTime()

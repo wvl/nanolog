@@ -1,2 +1,2 @@
-DEBUG: stderr: Sent to both stdout and stderr
-DEBUG: [[33mwarn[0m] [33mShould log to stdout and stderr[0m
+stderr: Sent to both stdout and stderr
+[[33mwarn[0m] [33mShould log to stdout and stderr[0m
