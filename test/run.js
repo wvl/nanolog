@@ -63,3 +63,9 @@ log.info("base logger again")
 log.to(log.out.stdout({level: 'debug'}), log.out.stderr({level: 'warn'}))
 log.info("Should log to stdout")
 log.warn("Should log to stdout and stderr")
+
+// File test
+log.to(log.out.file({filename: './test.log'}))
+log.info("This should go to the log")
+log.warn("This warning should be written")
+log.debug("This should not log")

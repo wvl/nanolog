@@ -1,4 +1,5 @@
 util = require 'util'
+fs   = require 'fs'
 
 defaults = {}
 defaults.levels = {
@@ -6,7 +7,7 @@ defaults.levels = {
 }
 defaults.level = 'info'
 
-defaults.fileFormat = "%timestamp% [%level%] %message%"
+defaults.fileFormat = "%timestamp% [%level%] %message%\n"
 defaults.consoleFormat = "[%(default)level%] %(default)message%%:n:inspect%"
 
 defaults.colors = {
@@ -56,8 +57,20 @@ outputters =
       if !opts.level || entry.logger.shouldLog(entry.level, opts.level)
         console.warn entry.format(opts.format)
 
+  file: (opts={}) ->
+    opts.format ||= defaults.fileFormat
+
+    stream = fs.createWriteStream(opts.filename) if opts.filename
+    stream ||= opts.stream
+    if !stream
+      throw new Error('Cannot log to file without filename or stream.')
+
+    (entry) ->
+      if !opts.level || entry.logger.shouldLog(entry.level, opts.level)
+        stream.write entry.format(opts.format)
+
 defaults.attrs =
-  timestamp: -> new Date().getTime()
+  timestamp: -> new Date().toISOString()
   datetime: -> m.datetime()
   inspect: m.inspector()
   color: m.color()

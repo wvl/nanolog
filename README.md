@@ -152,5 +152,4 @@ code).
 TODO
 ----
 
-* Add File outputter
 * Publish to npm.
