@@ -1,3 +1,4 @@
 test/stdout
 test/stderr
 node_modules
+lib

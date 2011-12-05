@@ -1,6 +1,7 @@
 Sigh, yes, another logging module.
 
 The goals:
+
   * Flexible -- format of log entry, where to log
   * Simple -- Simple api
   * Multiple output transports, with different configs and log levels
@@ -147,9 +148,3 @@ log.to(log.out.stdout(), log.out.file({file: './log.txt', level:
 Returns a logger object that is module specific. You can then set
 module specific logger levels (to turn up/down certain sections of
 code).
-
-
-TODO
-----
-
-* Publish to npm.
