@@ -1,7 +1,8 @@
 { "name": "nanolog"
 , "author": "Wayne Larsen <wayne@larsen.st>"
 , "description": "Flexible but Simple Logger"
-, "version": "0.1.0"
+, "version": "0.1.1"
+, "license": "MIT"
 , "repository": { "url": "https://github.com/wvl/nanolog.git" }
 , "homepage": "https://github.com/wvl/nanolog"
 , "bugs": { "url": "https://github.com/wvl/nanolog/issues" }
